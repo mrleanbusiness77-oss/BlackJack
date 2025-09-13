@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="ka">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blackjack თამაში</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460);
+            background-attachment: fixed;
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 20%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(255, 111, 97, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 40% 70%, rgba(88, 86, 214, 0.2) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .game-container {
+            max-width: 1000px;
+            width: 100%;
+            padding: 20px;
+        }
+
+        .game-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            font-size: 3em;
+            margin-bottom: 15px;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1, #f9ca24);
+            background-size: 300% 300%;
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: gradientShift 3s ease infinite;
+            text-shadow: 0 0 30px rgba(255, 107, 107, 0.5);
+            filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.5));
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .game-stats {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-bottom: 20px;
+        }
+
+        .stat {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 15px 25px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .stat:hover {
+            transform: translateY(-5px) scale(1.05);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        .game-board {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 25px;
+            padding: 40px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .game-board::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.03), transparent);
+            animation: shimmer 3s infinite;
+            pointer-events: none;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+            100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+        }
+
+        .dealer-section, .player-section {
+            margin-bottom: 30px;
+        }
+
+        .section-title {
+            font-size: 1.8em;
+            margin-bottom: 20px;
+            text-align: center;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: bold;
+        }
+
+        .cards-container {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .card {
+            width: 90px;
+            height: 125px;
+            background: linear-gradient(145deg, #ffffff, #f0f0f0);
+            color: black;
+            border-radius: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            font-weight: bold;
+            box-shadow: 
+                0 10px 25px rgba(0, 0, 0, 0.2),
+                inset 0 1px 0 rgba(255, 255, 255, 0.6);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+            transition: left 0.6s;
+        }
+
+        .card:hover::before {
+            left: 100%;
+        }
+
+        .card:hover {
+            transform: translateY(-10px) rotateX(5deg) scale(1.05);
+            box-shadow: 
+                0 20px 40px rgba(0, 0, 0, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.6);
+        }
+
+        .card.red {
+            color: #d32f2f;
+        }
+
+        .card.black {
+            color: #000;
+        }
+
+        .card-back {
+            background: linear-gradient(45deg, #667eea, #764ba2, #f093fb, #f5576c);
+            background-size: 300% 300%;
+            animation: cardGradient 4s ease infinite;
+            color: white;
+            box-shadow: 
+                0 10px 25px rgba(102, 126, 234, 0.4),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        }
+
+        @keyframes cardGradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .score {
+            text-align: center;
+            font-size: 1.3em;
+            margin: 10px 0;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-top: -10px;
+        }
+
+        .btn {
+            padding: 16px 32px;
+            border: none;
+            border-radius: 50px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            position: relative;
+            overflow: hidden;
+            min-width: 140px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .btn:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .btn:hover {
+            transform: translateY(-8px) scale(1.05);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+        }
+
+        .btn:active {
+            transform: translateY(-4px) scale(1.02);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn:disabled:hover {
+            transform: none;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn:disabled::before {
+            display: none;
+        }
+
+        .btn-hit {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a52);
+            color: white;
+            box-shadow: 0 8px 25px rgba(255, 107, 107, 0.4);
+        }
+
+        .btn-hit:hover {
+            box-shadow: 0 20px 40px rgba(255, 107, 107, 0.6);
+        }
+
+        .btn-stand {
+            background: linear-gradient(45deg, #4ecdc4, #44a08d);
+            color: white;
+            box-shadow: 0 8px 25px rgba(78, 205, 196, 0.4);
+        }
+
+        .btn-stand:hover {
+            box-shadow: 0 20px 40px rgba(78, 205, 196, 0.6);
+        }
+
+        .btn-deal {
+            background: linear-gradient(45deg, #ffd700, #ffb300);
+            color: #333;
+            box-shadow: 0 8px 25px rgba(255, 215, 0, 0.4);
+        }
+
+        .btn-deal:hover {
+            box-shadow: 0 20px 40px rgba(255, 215, 0, 0.6);
+        }
+
+        .message {
+            text-align: center;
+            font-size: 1.6em;
+            margin: 25px 0;
+            min-height: 35px;
+            font-weight: bold;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .message.win {
+            background: linear-gradient(45deg, #4caf50, #8bc34a);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 0 10px rgba(76, 175, 80, 0.5));
+        }
+
+        .message.lose {
+            background: linear-gradient(45deg, #f44336, #ff7043);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 0 10px rgba(244, 67, 54, 0.5));
+        }
+
+        .message.tie {
+            background: linear-gradient(45deg, #ff9800, #ffc107);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 0 10px rgba(255, 152, 0, 0.5));
+        }
+
+        @media (max-width: 768px) {
+            .game-stats {
+                flex-direction: column;
+                align-items: center;
+                gap: 15px;
+            }
+            
+            .cards-container {
+                gap: 5px;
+            }
+            
+            .card {
+                width: 70px;
+                height: 100px;
+                font-size: 13px;
+            }
+            
+            .controls {
+                flex-direction: row;
+                justify-content: center;
+                gap: 15px;
+            }
+
+            .btn {
+                min-width: 100px;
+                padding: 12px 20px;
+                font-size: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="game-header">
+            <h1>🃏 BLACKJACK 🃏</h1>
+            <div class="game-stats">
+                <div class="stat">
+                    <div>მოგებები</div>
+                    <div id="wins">0</div>
+                </div>
+                <div class="stat">
+                    <div>წაგებები</div>
+                    <div id="losses">0</div>
+                </div>
+                <div class="stat">
+                    <div>ფრეები</div>
+                    <div id="ties">0</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="game-board">
+            <div class="dealer-section">
+                <div class="section-title">დილერი</div>
+                <div class="cards-container" id="dealer-cards"></div>
+                <div class="score" id="dealer-score">ქულა: 0</div>
+            </div>
+
+            <div class="player-section">
+                <div class="section-title">მოთამაშე</div>
+                <div class="cards-container" id="player-cards"></div>
+                <div class="score" id="player-score">ქულა: 0</div>
+            </div>
+        </div>
+
+        <div class="message" id="message"></div>
+
+        <div class="controls">
+            <button class="btn btn-hit" id="hit-btn" onclick="hit()">კარტი</button>
+            <button class="btn btn-stand" id="stand-btn" onclick="stand()">ფიქსაცია</button>
+            <button class="btn btn-deal" id="deal-btn" onclick="newGame()">ახალი თამაში</button>
+        </div>
+    </div>
+
+    <script>
+        // თამაშის ცვლადები
+        let deck = [];
+        let playerCards = [];
+        let dealerCards = [];
+        let gameActive = false;
+        let dealerTurn = false;
+
+        // სტატისტიკა
+        let stats = {
+            wins: 0,
+            losses: 0,
+            ties: 0
+        };
+
+        // კარტების შექმნა
+        function createDeck() {
+            const suits = ['♠', '♥', '♦', '♣'];
+            const values = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+            deck = [];
+            
+            for (let suit of suits) {
+                for (let value of values) {
+                    deck.push({
+                        suit: suit,
+                        value: value,
+                        numericValue: getNumericValue(value)
+                    });
+                }
+            }
+            
+            // კარტების ჯანყება
+            for (let i = deck.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [deck[i], deck[j]] = [deck[j], deck[i]];
+            }
+        }
+
+        // კარტის რიცხვითი მნიშვნელობა
+        function getNumericValue(value) {
+            if (value === 'A') return 11;
+            if (['J', 'Q', 'K'].includes(value)) return 10;
+            return parseInt(value);
+        }
+
+        // კარტის დახატვა
+        function drawCard() {
+            return deck.pop();
+        }
+
+        // ქულების გამოთვლა
+        function calculateScore(cards) {
+            let score = 0;
+            let aces = 0;
+            
+            for (let card of cards) {
+                if (card.value === 'A') {
+                    aces++;
+                    score += 11;
+                } else {
+                    score += card.numericValue;
+                }
+            }
+            
+            // ეზების კორექცია
+            while (score > 21 && aces > 0) {
+                score -= 10;
+                aces--;
+            }
+            
+            return score;
+        }
+
+        // კარტის ვიზუალური ჩვენება
+        function displayCard(card, isHidden = false) {
+            const cardElement = document.createElement('div');
+            cardElement.className = 'card';
+            
+            if (isHidden) {
+                cardElement.className += ' card-back';
+                cardElement.innerHTML = '🃏';
+            } else {
+                if (card.suit === '♥' || card.suit === '♦') {
+                    cardElement.className += ' red';
+                } else {
+                    cardElement.className += ' black';
+                }
+                cardElement.innerHTML = `
+                    <div>${card.value}</div>
+                    <div style="font-size: 20px;">${card.suit}</div>
+                `;
+            }
+            
+            return cardElement;
+        }
+
+        // მოთამაშის კარტების ჩვენება
+        function displayPlayerCards() {
+            const container = document.getElementById('player-cards');
+            container.innerHTML = '';
+            
+            for (let card of playerCards) {
+                container.appendChild(displayCard(card));
+            }
+            
+            document.getElementById('player-score').textContent = `ქულა: ${calculateScore(playerCards)}`;
+        }
+
+        // დილერის კარტების ჩვენება
+        function displayDealerCards() {
+            const container = document.getElementById('dealer-cards');
+            container.innerHTML = '';
+            
+            for (let i = 0; i < dealerCards.length; i++) {
+                const isHidden = i === 0 && !dealerTurn && gameActive;
+                container.appendChild(displayCard(dealerCards[i], isHidden));
+            }
+            
+            let scoreText = 'ქულა: ';
+            if (dealerTurn || !gameActive) {
+                scoreText += calculateScore(dealerCards);
+            } else {
+                scoreText += '?';
+            }
+            document.getElementById('dealer-score').textContent = scoreText;
+        }
+
+        // კარტის აღება (Hit)
+        function hit() {
+            if (!gameActive || dealerTurn) return;
+            
+            playerCards.push(drawCard());
+            displayPlayerCards();
+            
+            const playerScore = calculateScore(playerCards);
+            if (playerScore > 21) {
+                endGame('bust');
+            }
+        }
+
+        // ფიქსაცია (Stand)
+        function stand() {
+            if (!gameActive || dealerTurn) return;
+            
+            dealerTurn = true;
+            dealerPlay();
+        }
+
+        // დილერის თამაში
+        function dealerPlay() {
+            displayDealerCards();
+            
+            const dealerScore = calculateScore(dealerCards);
+            
+            if (dealerScore < 17) {
+                setTimeout(() => {
+                    dealerCards.push(drawCard());
+                    displayDealerCards();
+                    dealerPlay();
+                }, 1000);
+            } else {
+                endGame('compare');
+            }
+        }
+
+        // თამაშის დასრულება
+        function endGame(reason) {
+            gameActive = false;
+            dealerTurn = true;
+            displayDealerCards();
+            
+            const playerScore = calculateScore(playerCards);
+            const dealerScore = calculateScore(dealerCards);
+            
+            let message = '';
+            let messageClass = '';
+            
+            if (reason === 'bust') {
+                message = '💥 გადააჭარბე 21-ს! წაგება!';
+                messageClass = 'lose';
+                stats.losses++;
+            } else if (reason === 'compare') {
+                if (dealerScore > 21) {
+                    message = '🎉 დილერმა გადააჭარბა! მოგება!';
+                    messageClass = 'win';
+                    stats.wins++;
+                } else if (playerScore > dealerScore) {
+                    message = '🎉 მოგება! შენი ქულა უკეთესია!';
+                    messageClass = 'win';
+                    stats.wins++;
+                } else if (dealerScore > playerScore) {
+                    message = '😞 წაგება! დილერის ქულა უკეთესია!';
+                    messageClass = 'lose';
+                    stats.losses++;
+                } else {
+                    message = '🤝 ფრე! ერთნაირი ქულები!';
+                    messageClass = 'tie';
+                    stats.ties++;
+                }
+            }
+            
+            document.getElementById('message').textContent = message;
+            document.getElementById('message').className = `message ${messageClass}`;
+            
+            // ღილაკების გაუქმება
+            document.getElementById('hit-btn').disabled = true;
+            document.getElementById('stand-btn').disabled = true;
+            
+            updateStats();
+            
+            // 3 წამის შემდეგ ავტომატურად ახალი თამაში
+            setTimeout(() => {
+                newGame();
+            }, 3000);
+        }
+
+        // სტატისტიკის განახლება
+        function updateStats() {
+            document.getElementById('wins').textContent = stats.wins;
+            document.getElementById('losses').textContent = stats.losses;
+            document.getElementById('ties').textContent = stats.ties;
+        }
+
+        // ახალი თამაში
+        function newGame() {
+            // ცვლადების გასუფთავება
+            playerCards = [];
+            dealerCards = [];
+            gameActive = true;
+            dealerTurn = false;
+            
+            // ღილაკების ჩართვა
+            document.getElementById('hit-btn').disabled = false;
+            document.getElementById('stand-btn').disabled = false;
+            
+            // შეტყობინების გასუფთავება
+            document.getElementById('message').textContent = '';
+            document.getElementById('message').className = 'message';
+            
+            // ახალი კარტების შექმნა თუ საჭიროა
+            if (deck.length < 10) {
+                createDeck();
+            }
+            
+            // საწყისი კარტები
+            playerCards.push(drawCard(), drawCard());
+            dealerCards.push(drawCard(), drawCard());
+            
+            displayPlayerCards();
+            displayDealerCards();
+            
+            // Blackjack-ის შემოწმება
+            const playerScore = calculateScore(playerCards);
+            const dealerScore = calculateScore(dealerCards);
+            
+            if (playerScore === 21) {
+                if (dealerScore === 21) {
+                    endGame('compare');
+                } else {
+                    document.getElementById('message').textContent = '🎉 BLACKJACK! მოგება!';
+                    document.getElementById('message').className = 'message win';
+                    stats.wins++;
+                    updateStats();
+                    gameActive = false;
+                    document.getElementById('hit-btn').disabled = true;
+                    document.getElementById('stand-btn').disabled = true;
+                    
+                    // 3 წამის შემდეგ ავტომატურად ახალი თამაში
+                    setTimeout(() => {
+                        newGame();
+                    }, 3000);
+                }
+            }
+        }
+
+        // თამაშის ინიციალიზაცია
+        createDeck();
+        newGame();
+        updateStats();
+    </script>
+</body>
+</html>
